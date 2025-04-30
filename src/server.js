@@ -1,25 +1,10 @@
 const express = require("express")
-const { PrismaClient } = require("@prisma/client")
+require('dotenv').config()
 const app = express()
-const prisma = new PrismaClient()
+const { auth } = require('./routes/auth')
 app.use(express.json())
+app.use('/api/auth', auth)
 
-app.get('/', async (req, res)=>{
-	const newUser = await prisma.user.create(
-		{
-			data:
-			{
-				firstName: "shadi",
-				lastName: "mahmoud",
-				email,
-				password
-			}
-			
-		}
-	)
-	res.json(newUser)
-})
-
-app.listen(4444, ()=>{
+app.listen(4444, () => {
 	console.log("run on http://localhost:4444/")
 })
