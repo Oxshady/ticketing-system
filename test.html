@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Google OAuth Login</title>
+</head>
+<body>
+  <h1>Google OAuth Authentication</h1>
+  
+  <!-- Button to trigger Google OAuth Login -->
+  <button id="google-login-btn">Login with Google</button>
+  
+  <div id="response" style="display: none;">
+    <h2>Authentication Successful!</h2>
+    <p>Token: <span id="token"></span></p>
+  </div>
+
+  <script>
+    // Get the Google login button
+    const googleLoginButton = document.getElementById("google-login-btn");
+    
+    // When the login button is clicked, redirect to Google OAuth
+    googleLoginButton.addEventListener("click", function() {
+      window.location.href = 'http://localhost:4444/api/auth/google';  // Redirect to your backend OAuth route
+    });
+
+    // After Google redirects to your backend, the backend sends the token in response
+    window.onload = function() {
+      // Check if the page URL contains a token (after successful login)
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get("token");
+
+      if (token) {
+        document.getElementById("response").style.display = "block";
+        document.getElementById("token").textContent = token;
+      }
+    };
+  </script>
+</body>
+</html>
