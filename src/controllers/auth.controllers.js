@@ -1,7 +1,13 @@
 const {createUser, foundUser} = require('../services/user.services')
 const {comparePassword} = require('../utils/password.utils')
 const {createToken} = require('../utils/jwtHelper.utils')
+const validator = require('express-validator');
+
+
 const loginController = async (req, res) => {
+	const errors = validator.validationResult(req)
+	if(!errors.isEmpty())
+		return res.json(errors.array())
 	const { email , password } = req.body
 	const user = await foundUser(email)
 	if (!user)
@@ -23,6 +29,9 @@ const loginController = async (req, res) => {
 }
 
 const registerConstoller = async (req, res) => {
+	const errors = validator.validationResult(req)
+	if(!errors.isEmpty())
+		return res.json(errors.array())
 	const {
 		firstName,
 		lastName,
