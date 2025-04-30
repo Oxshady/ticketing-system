@@ -1,19 +1,30 @@
-const { PrismaClient } = require("@prisma/client")
-const {encryptPassword} = require('../utils/password.utils')
-const prisma = new PrismaClient()
+const { encryptPassword } = require('../utils/password.utils')
+const prisma = require('../config/prisma/client')
 
+const createUser = async (firstName, lastName, email, pass, googleId = null) => {
+	let userData = {
+		firstName,
+		lastName,
+		email
+	};
 
-const createUser = async (firstName, lastName, email, pass) => {
-	const password = encryptPassword(pass)
+	if (googleId && pass) {
+		throw new Error('Provide either a password or a Google ID, not both.');
+	}
+
+	if (googleId) {
+		userData.googleId = googleId;
+	} else if (pass) {
+		userData.password = await encryptPassword(pass);
+	} else {
+		throw new Error('You must provide either a password or a Google ID.');
+	}
+
 	return await prisma.user.create({
-		data: {
-			firstName,
-			lastName,
-			email,
-			password
-		}
-	})
-}
+		data: userData
+	});
+};
+
 
 const getUsers = async () => {
 	const users = await prisma.user.findMany()
@@ -56,10 +67,22 @@ const deleteUser = async (id) => {
 	return user
 }
 
+const foundUser = async (email) => {
+	const user = await prisma.user.findUnique({
+		where: {
+			email
+		}
+	})
+	if (user)
+		return user
+	else
+		return false
+}
 module.exports = {
 	createUser,
 	getUser,
 	getUsers,
 	updateData,
-	deleteUser
+	deleteUser,
+	foundUser
 }
