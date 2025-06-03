@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon src/server.js",
     "prismaGenerate": "npx prisma generate --schema=src/config/prisma/schema.prisma",
     "prismaMigrate": "npx prisma migrate dev --schema=src/config/prisma/schema.prisma",
     "prismaDeploy": "npx prisma migrate deploy --schema=src/config/prisma/schema.prisma"
@@ -13,16 +13,21 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@faker-js/faker": "^9.7.0",
     "@prisma/client": "^6.6.0",
     "bcrypt": "^5.1.1",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "express-validator": "^7.2.1",
+    "fetch": "^1.1.0",
     "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.14.1",
-    "nodemon": "^3.1.10",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
-    "prisma": "^6.6.0"
+    "prisma": "^6.6.0",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
   }
 }
