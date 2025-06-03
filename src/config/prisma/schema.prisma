@@ -116,6 +116,7 @@ model Trip {
   deppartual       DateTime
   arrival         DateTime
   frequency       String
+  price           Float
   source          String
   destination     String
   stationLocation String
