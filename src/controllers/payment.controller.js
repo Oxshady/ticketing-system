@@ -1,4 +1,4 @@
-const { initiatePayment } = require('../utils/payment.utils')
+const { initiatePayment } = require('../services/payment.services')
 
 const initiateController = async (req, res) => {
 	const { amount , quantity} = req.body;
