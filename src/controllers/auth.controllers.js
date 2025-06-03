@@ -58,6 +58,7 @@ const googleAuth = async (req, res)=>{
 		id: req.user.id,
 		email: req.user.email
 	})
+	console.log(req.user)
 	return res.json({
 		token
 	})
