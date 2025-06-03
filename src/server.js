@@ -2,9 +2,10 @@ const express = require("express")
 require('dotenv').config()
 const app = express()
 const { auth } = require('./routes/auth')
+const { payment } = require('./routes/payment.rout')
 app.use(express.json())
 app.use('/api/auth', auth)
-
+app.use('/api/payment', payment)
 app.listen(4444, () => {
 	console.log("run on http://localhost:4444/")
 })
