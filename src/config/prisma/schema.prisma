@@ -31,12 +31,9 @@ model Reservation {
   user   User   @relation(fields: [userId], references: [id])
   userId String
 
-  ticket   Ticket @relation(fields: [ticketId], references: [id])
-  ticketId String @unique
+  ticket Ticket[]
 
   payment Payment?
-  seat    Seat     @relation(fields: [seatId], references: [id])
-  seatId  String   @unique
 
   trip   Trip?   @relation(fields: [tripId], references: [id])
   tripId String?
@@ -47,12 +44,17 @@ model Reservation {
 }
 
 model Ticket {
-  id          String       @id @default(uuid())
-  price       Float
-  status      String
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  reservation Reservation?
+  id            String       @id @default(uuid())
+  price         Float
+  status        String
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  reservation   Reservation? @relation(fields: [reservationId], references: [id])
+  reservationId String?
+
+  seat          Seat         @relation(fields: [seatId], references: [id])
+  seatId        String
 }
 
 model Payment {
@@ -100,17 +102,17 @@ model Seat {
   seatNumber Int
   class      String
   createdAt  DateTime @default(now())
-  updatedAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   train   Train  @relation(fields: [trainId], references: [id])
   trainId String
 
-  reservation Reservation?
+  ticket  Ticket[]
 }
 
 model Trip {
   id              String   @id @default(uuid())
-  deppartual      DateTime
+  deppartual       DateTime
   arrival         DateTime
   frequency       String
   source          String
