@@ -8,155 +8,241 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum TripStatus {
+  SCHEDULED
+  CANCELLED
+  COMPLETED
+  DELAYED
+}
+
+enum TrainStatus {
+  ACTIVE
+  MAINTENANCE
+  RETIRED
+}
+
+enum TrainType {
+  EXPRESS
+  LOCAL
+  HIGH_SPEED
+}
+
+enum SeatClass {
+  ECONOMY
+  BUSINESS
+  FIRST_CLASS
+}
+
+enum PaymentMethod {
+  CARD
+  CASH
+  BANK_TRANSFER
+}
+
+enum TourPackageStatus {
+  ACTIVE
+  INACTIVE
+}
+
 model User {
-  id          String        @id @default(uuid())
-  firstName   String
-  lastName    String
-  points      Int           @default(0)
-  email       String        @unique
-  password    String?
-  googleId    String?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  reservation Reservation[]
-  payment     Payment[]
-  feedback    Feedback[]
+  id           String        @id @default(uuid())
+  firstName    String
+  lastName     String
+  points       Int           @default(0)
+  email        String        @unique
+  password     String?
+  googleId     String?       @unique
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  reservations Reservation[]
+  payments     Payment[]
+  feedbacks    Feedback[]
+
+  @@index([email])
+}
+
+model TripTourPackage {
+  id            String        @id @default(uuid())
+  trip          Trip          @relation(fields: [tripId], references: [id])
+  tripId        String
+  tourPackage   TourPackage   @relation(fields: [tourPackageId], references: [id])
+  tourPackageId String
+  reservations  Reservation[]
+
+  @@unique([tripId, tourPackageId])
+  @@index([tripId])
+  @@index([tourPackageId])
 }
 
 model Reservation {
-  id        String   @id @default(uuid())
-  status    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        String            @id @default(uuid())
+  status    ReservationStatus @default(PENDING)
+  price     Float
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
 
   user   User   @relation(fields: [userId], references: [id])
   userId String
-
-  ticket Ticket[]
-
-  payment Payment?
 
   trip   Trip?   @relation(fields: [tripId], references: [id])
   tripId String?
 
-  tripPackage              TripPackage? @relation(fields: [tripPackageTripId, tripPackageTourPackageId], references: [tripId, tourPackageId])
-  tripPackageTripId        String?
-  tripPackageTourPackageId String?
+  tripTourPackage   TripTourPackage? @relation(fields: [tripTourPackageId], references: [id])
+  tripTourPackageId String?
+
+  tickets  Ticket[]
+  payment  Payment?
+  feedback Feedback?
+
+
+  @@index([userId])
+  @@index([tripId])
+  @@index([tripTourPackageId])
+  @@index([status])
 }
 
 model Ticket {
-  id            String       @id @default(uuid())
+  id            String      @id @default(uuid())
   price         Float
-  status        String
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-
-  reservation   Reservation? @relation(fields: [reservationId], references: [id])
-  reservationId String?
-
-  seat          Seat         @relation(fields: [seatId], references: [id])
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  reservationId String
+  seat          Seat        @relation(fields: [seatId], references: [id])
   seatId        String
+  trip          Trip        @relation(fields: [tripId], references: [id])
+  tripId        String
+
+  @@unique([seatId, tripId])
+  @@index([reservationId, tripId])
 }
 
 model Payment {
-  id        String   @id @default(uuid())
-  amount    Float
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  status    String
-  method    String
+  id            String        @id @default(uuid())
+  amount        Float
+  status        PaymentStatus @default(PENDING)
+  method        PaymentMethod
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  user          User          @relation(fields: [userId], references: [id])
+  userId        String
+  reservation   Reservation   @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  reservationId String        @unique
 
-  user   User   @relation(fields: [userId], references: [id])
-  userId String
-
-  reservation   Reservation @relation(fields: [reservationId], references: [id])
-  reservationId String      @unique
+  @@index([userId])
+  @@index([status])
 }
 
 model Feedback {
-  id        String   @id @default(uuid())
-  rating    Int
-  comment   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String      @id @default(uuid())
+  rating        Int         @db.TinyInt
+  comment       String?     @db.Text
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  user          User        @relation(fields: [userId], references: [id])
+  userId        String
+  reservation   Reservation @relation(fields: [reservationId], references: [id])
+  reservationId String      @unique
 
-  user   User   @relation(fields: [userId], references: [id])
-  userId String
+  @@index([userId])
+  @@index([rating])
 }
 
 model Train {
-  id        String   @id @default(uuid())
-  name      String
+  id        String      @id @default(uuid())
+  name      String      @unique
   capacity  Int
-  type      String
-  status    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  type      TrainType
+  status    TrainStatus @default(ACTIVE)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  seats     Seat[]
+  trips     Trip[]
 
-  seat Seat[]
-  trip Trip[]
+  @@index([status])
+  @@index([type])
 }
 
 model Seat {
-  id         String   @id @default(uuid())
-  status     String
-  seatNumber Int
-  class      String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id         String    @id @default(uuid())
+  seatNumber String
+  class      SeatClass
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  train      Train     @relation(fields: [trainId], references: [id])
+  trainId    String
+  tickets    Ticket[]
 
-  train   Train  @relation(fields: [trainId], references: [id])
-  trainId String
-
-  ticket  Ticket[]
+  @@unique([trainId, seatNumber])
+  @@index([trainId, class])
 }
 
 model Trip {
-  id              String   @id @default(uuid())
-  deppartual       DateTime
-  arrival         DateTime
-  frequency       String
-  price           Float
-  source          String
-  destination     String
-  stationLocation String
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id               String            @id @default(uuid())
+  departure        DateTime
+  arrival          DateTime
+  frequency        String
+  price            Float
+  source           String
+  destination      String
+  stationLocation  String
+  status           TripStatus        @default(SCHEDULED)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  train            Train             @relation(fields: [trainId], references: [id])
+  trainId          String
+  reservations     Reservation[]
+  tickets          Ticket[]
+  tripTourPackages TripTourPackage[]
 
-  train   Train  @relation(fields: [trainId], references: [id])
-  trainId String
-
-  reservation Reservation[]
-  tripPackage TripPackage[]
+  @@unique([trainId, departure])
+  @@index([trainId, departure, arrival])
+  @@index([source, destination])
+  @@index([departure])
+  @@index([status])
 }
 
 model TourCompany {
-  id          String        @id @default(uuid())
-  name        String
-  email       String
-  tourPackage TourPackage[]
+  id           String        @id @default(uuid())
+  name         String        @unique
+  email        String        @unique
+  phone        String?
+  address      String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  tourPackages TourPackage[]
+
+  @@index([email])
 }
 
 model TourPackage {
-  id          String      @id @default(uuid())
-  name        String
-  description String
-  price       Float
-  duration    String
-  company     TourCompany @relation(fields: [companyId], references: [id])
-  companyId   String
+  id               String            @id @default(uuid())
+  name             String
+  description      String            @db.Text
+  price            Float
+  duration         String
+  status           TourPackageStatus @default(ACTIVE)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  company          TourCompany       @relation(fields: [companyId], references: [id])
+  companyId        String
+  tripTourPackages TripTourPackage[]
 
-  tripPackage TripPackage[]
-}
-
-model TripPackage {
-  trip   Trip   @relation(fields: [tripId], references: [id])
-  tripId String
-
-  tourPackage   TourPackage @relation(fields: [tourPackageId], references: [id])
-  tourPackageId String
-
-  reservation Reservation[]
-
-  @@id([tripId, tourPackageId])
+  @@unique([companyId, name])
+  @@index([companyId])
+  @@index([status])
 }
