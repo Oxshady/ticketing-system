@@ -1,7 +1,7 @@
 const prisma = require('../config/prisma/client');
 
 const createReservation = async (userId, tripId, tripTourPackageId, price) => {
-	if (!userId || !tripId || !tripTourPackageId) {
+	if (!userId || (!tripId && !tripTourPackageId)) {
 		throw new Error('User ID, Trip ID, and Trip Tour Package ID are required to create a reservation.');
 	}
 	let reservation=null;

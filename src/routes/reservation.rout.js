@@ -14,17 +14,29 @@ reservation.post('/', async(req, res)=>{
 		if (price <= 0) {
 			return res.status(400).json({ error: 'Invalid seat price' });
 		}
-		const reservationData = await createReservation(userId, tripId, tripTourPackageId, price);
+		const reservation = await createReservation(userId, tripId, tripTourPackageId, price);
 		const user = await prisma.user.findUnique({
 			where: { id: userId },
 			select: { email: true, firstName: true, lastName: true }
 		});
 		const paymentResponse = await initiatePayment(price * 100, user);
+		if (!paymentResponse || !paymentResponse.client_secret) {
+			return res.status(500).json({ error: 'Payment initiation failed' });
+		}
+		const payment = await prisma.payment.create({
+			data: {
+				amount: price,
+				reservationId: reservation.id,
+				userId: userId,
+				paymobOrderId: JSON.stringify(paymentResponse.intention_order_id),
+				method: 'CARD',
+			}
+		});
 		const paymentUrl = await paymentGateway(paymentResponse);
 		if (!paymentUrl) {
 			return res.status(500).json({ error: 'Payment initiation failed `url failed`' });
 		}
-		res.status(201).json({paymentUrl});
+		res.status(201).json({paymentResponse, paymentUrl});
 	} catch (error) {
 		res.status(500).json({ error: error.message });
 	}

@@ -1,5 +1,6 @@
 const { initiatePayment } = require('../services/payment.services')
-
+const prisma = require('../config/prisma/client');
+const { payment } = require('../routes/payment.rout');
 const initiateController = async (req, res) => {
 	const { amount , quantity} = req.body;
 
@@ -16,8 +17,14 @@ const initiateController = async (req, res) => {
 }
 
 const statusController = async (req, res) => {
-
-	console.log(req);
+	if (req.body.obj.success === true) {
+		await prisma.payment.update({
+			where: { paymobOrderId: JSON.stringify(req.body.obj.payment_key_claims.order_id) },
+			data: { status: 'COMPLETED' }
+		});
+		console.log('Payment completed successfully');
+		console.log(JSON.stringify(payment));
+	}
 }
 
 const redirectController = async (req, res) => {
