@@ -4,10 +4,13 @@ const app = express()
 const { auth } = require('./routes/auth')
 const { payment } = require('./routes/payment.rout')
 const { reservation } = require('./routes/reservation.rout')
+const {globalErrorHandler} = require('./middlewares/errorHandler.middleware')
 app.use(express.json())
 app.use('/api/auth', auth)
 app.use('/api/payment', payment)
 app.use('/api/reservation', reservation)
+app.use(globalErrorHandler)
+
 app.listen(4444, () => {
 	console.log("run on http://localhost:4444/")
 })
