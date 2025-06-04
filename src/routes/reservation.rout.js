@@ -2,6 +2,7 @@ const reservation = require('express').Router();
 const {ReservationPrice} = require('../utils/reservation.utils');
 const {createReservation} = require('../services/reservation.services');
 const {initiatePayment,paymentGateway } = require('../services/payment.services');
+const { createTicket } = require('../services/ticket.services');
 const prisma = require('../config/prisma/client');
 const { use } = require('passport');
 reservation.post('/', async(req, res)=>{
@@ -32,10 +33,15 @@ reservation.post('/', async(req, res)=>{
 				method: 'CARD',
 			}
 		});
-		const paymentUrl = await paymentGateway(paymentResponse);
+		const paymentUrl = await paymentGateway(paymentResponse)
+		const tickets = await createTicket(reservation, seatIds);
+		if (!tickets || tickets.length === 0) {
+			return res.status(500).json({ error: 'Ticket creation failed' });
+		}
 		if (!paymentUrl) {
 			return res.status(500).json({ error: 'Payment initiation failed `url failed`' });
 		}
+
 		res.status(201).json({paymentResponse, paymentUrl});
 	} catch (error) {
 		res.status(500).json({ error: error.message });

@@ -22,6 +22,13 @@ enum PaymentStatus {
   REFUNDED
 }
 
+enum TicketStatus {
+  RESERVED
+  CANCELLED
+  EXPIRED
+  PENDING
+}
+
 enum TripStatus {
   SCHEDULED
   CANCELLED
@@ -117,7 +124,7 @@ model Reservation {
 
 model Ticket {
   id            String      @id @default(uuid())
-  price         Float
+  status        TicketStatus @default(PENDING)
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
