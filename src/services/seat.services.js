@@ -1,13 +1,17 @@
 const prisma = require('../config/prisma/client');
 
-const getAvailableSeats = async (trainId) => {
-	const seats = await prisma.seat.findMany({
+const getAvailableSeats = async (trip) => {
+	const availableSeats = await prisma.seat.findMany({
 		where: {
-			trainId: trainId,
-			status: 'Available',
+			trainId: trip.trainId,
+			tickets: {
+				none: {
+					tripId: trip.id,
+				},
+			},
 		},
 	});
-	return seats;
+	console.log('Available seats:', availableSeats);
 }
 
 
@@ -30,18 +34,6 @@ const getSeatBySeatNumber = async (trainId, seatNumber) => {
 	return seat;
 };
 
-const updateSeatStatus = async (id, status) => {
-	const updatedSeat = await prisma.seat.update({
-		where: {
-			id: id,
-		},
-		data: {
-			status: status,
-		},
-	});
-	return updatedSeat;
-};
-
 const createSeat = async (seatData) => {
 	const newSeat = await prisma.seat.create({
 		data: seatData,
@@ -58,24 +50,11 @@ const deleteSeat = async (id) => {
 	return deletedSeat;
 };
 
-const getSeatStatus = async (id) => {
-	const seat = await prisma.seat.findUnique({
-		where: {
-			id: id,
-		},
-		select: {
-			status: true,
-		},
-	});
-	return seat ? seat.status : null;
-};
 
 module.exports = {
 	getAvailableSeats,
 	getSeatById,
-	updateSeatStatus,
 	createSeat,
 	deleteSeat,
-	getSeatStatus,
 	getSeatBySeatNumber
 };
