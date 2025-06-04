@@ -11,7 +11,7 @@ const getAvailableSeats = async (trip) => {
 			},
 		},
 	});
-	console.log('Available seats:', availableSeats);
+	return availableSeats
 }
 
 
