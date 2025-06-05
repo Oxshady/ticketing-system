@@ -1,12 +1,10 @@
 const { da } = require('@faker-js/faker');
+const prisma = require('../config/prisma/client');
 const fetch = require('node-fetch');
 const { use } = require('passport');
 const uuidv4 = require('uuid');
-/**
- * Initiates a payment request to the Paymob API.
- * 
- * @param {number} amount - The amount to be charged in the smallest currency unit (e.g., cents).
- */
+
+
 
 const initiatePayment = async (amount, user) => {
 	let myHeaders = new Headers();
@@ -71,7 +69,63 @@ const paymentGateway = async (paymentResponse) => {
 	}
 }
 
+const createPayment = async (price, reservationId, userId, paymobOrderId) => {
+	const payment = await prisma.payment.create({
+		data: {
+			amount: price,
+			reservationId: reservationId,
+			userId: userId,
+			paymobOrderId: JSON.stringify(paymobOrderId),
+			method: 'CARD',
+		}
+	});
+	if (!payment) {
+		throw new Error('Payment creation failed');
+	}
+	return payment;
+}
+
+const updatePaymentStatus = async (orderId, status) => {
+	const updatedPayment = await prisma.payment.update({
+		where: { paymobOrderId: orderId },
+		data: { status: status },
+	});
+	if (!updatedPayment) {
+		throw new Error('Payment update failed');
+	}
+	return updatedPayment;
+}
+
+const getFailedPayment = async (orderId) => {
+	const failedPayment = await prisma.payment.findUnique({
+		where: { paymobOrderId: orderId },
+		include: {
+			reservation: {
+				include: { tickets: true },
+			},
+		},
+	});
+	if (!failedPayment) {
+		throw new Error('Failed payment not found');
+	}
+	return failedPayment;
+}
+
+const deletePayment = async (orderId) => {
+	const deletedPayment = await prisma.payment.delete({
+		where: { paymobOrderId: orderId },
+	});
+	if (!deletedPayment) {
+		throw new Error('Payment deletion failed');
+	}
+	return deletedPayment;
+}
+
 module.exports = {
 	initiatePayment,
-	paymentGateway
+	paymentGateway,
+	createPayment,
+	updatePaymentStatus,
+	getFailedPayment,
+	deletePayment
 };

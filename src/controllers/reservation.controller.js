@@ -1,8 +1,9 @@
 const { ReservationPrice } = require('../utils/reservation.utils');
-const prisma = require('../config/prisma/client');
 const { createReservation } = require('../services/reservation.services');
 const { initiatePayment, paymentGateway } = require('../services/payment.services');
 const { createTicket } = require('../services/ticket.services');
+const { getUser } = require('../services/user.services');
+const { createPayment } = require('../services/payment.services');
 const { BadRequestError, PaymentError, DatabaseError } = require('../utils/errorTypes.utils');
 
 const makeReservation = async (req, res) => {
@@ -19,11 +20,12 @@ const makeReservation = async (req, res) => {
 
 	const reservation = await createReservation(userId, tripId, tripTourPackageId, price);
 
-	const user = await prisma.user.findUnique({
-		where: { id: userId },
-		select: { email: true, firstName: true, lastName: true }
-	});
 
+	if (!reservation) {
+		throw new DatabaseError('Failed to create reservation');
+	}
+	const user = await getUser(userId); 
+	
 	if (!user) {
 		throw new DatabaseError('User not found');
 	}
@@ -33,16 +35,7 @@ const makeReservation = async (req, res) => {
 		throw new PaymentError('Payment initiation failed');
 	}
 
-	const payment = await prisma.payment.create({
-		data: {
-			amount: price,
-			reservationId: reservation.id,
-			userId: userId,
-			paymobOrderId: JSON.stringify(paymentResponse.intention_order_id),
-			method: 'CARD',
-		}
-	});
-
+	const payment = await createPayment(price * 100, reservation.id, userId, paymentResponse.intention_order_id);
 	const paymentUrl = await paymentGateway(paymentResponse);
 	if (!paymentUrl) {
 		throw new PaymentError('Payment URL generation failed');

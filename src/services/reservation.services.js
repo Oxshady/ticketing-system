@@ -122,6 +122,7 @@ const reservationStatusUpdate = async (id, status) => {
 			user: true,
 			trip: true,
 			tripTourPackage: true,
+			tickets: true,
 		},
 	});
 	return updatedReservation;
