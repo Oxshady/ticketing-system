@@ -4,7 +4,19 @@ const createTicket = async (reservation, seatIds) => {
 	if(!reservation || !seatIds || seatIds.length === 0) {
 		throw new Error('Invalid reservation or seat IDs');
 	}
-	const tripId = reservation.tripId || reservation.tripTourPackageId;
+	let tripId = null
+	if (reservation.tripId && !reservation.tripTourPackageId) tripId = reservation.tripId;
+	else if (reservation.tripTourPackageId && !reservation.tripId){
+		const tripTourPackage = await prisma.tripTourPackage.findUnique({
+			where: { id: reservation.tripTourPackageId },
+		});
+		if (!tripTourPackage || !tripTourPackage.tripId) {
+			throw new Error('Trip Tour Package not found or does not have a tripId');
+		}
+		console.log('tripIDfroooooooooom toupackage', tripTourPackage);
+		tripId = tripTourPackage.tripId;
+	}
+	console.log('Creating tickets for reservation:', reservation.id, 'with tripId:', tripId, 'and seatIds:', seatIds);
 	const tickets = await prisma.ticket.createMany({
 		data: seatIds.map(seatId => ({
 			reservationId: reservation.id,
@@ -12,6 +24,8 @@ const createTicket = async (reservation, seatIds) => {
 			tripId,
 		})),
 	});
+	console.log('ghikkksdadmaskjansjkndsajkndasjknadsjkasjknasjkndjknadjkanjkdnsajkd');
+	console.log('Tickets created:', tickets);
 	return tickets;
 
 }

@@ -12,36 +12,45 @@ const makeReservation = async (req, res) => {
 	if ((!tripId && !tripTourPackageId) || !userId || !seatIds || seatIds.length === 0) {
 		throw new BadRequestError('Missing required fields: userId, tripId or tripTourPackageId, and seatIds');
 	}
+	if (tripId && tripTourPackageId) {
+		throw new BadRequestError('Provide either tripId or tripTourPackageId, not both');
+	}
 
-	const price = await ReservationPrice(tripId, seatIds);
+	let price = 0;
+	if (tripTourPackageId) {
+		price = await ReservationPrice(null, seatIds, tripTourPackageId);
+	} else if (tripId) {
+		price = await ReservationPrice(tripId, seatIds, null);
+	}
+	console.log('Calculated price:', price);
 	if (price <= 0) {
-		throw new BadRequestError('Invalid seat price');
+		throw new BadRequestError('Invalid calculated price');
 	}
 
 	const reservation = await createReservation(userId, tripId, tripTourPackageId, price);
-
-
 	if (!reservation) {
 		throw new DatabaseError('Failed to create reservation');
 	}
-	const user = await getUser(userId); 
-	
+	console.log('Reservation created:', reservation);
+	const user = await getUser(userId);
 	if (!user) {
 		throw new DatabaseError('User not found');
 	}
 
-	const paymentResponse = await initiatePayment(price * 100, user);
+	const amountInCents = Math.round(price * 100);
+	const paymentResponse = await initiatePayment(amountInCents, user);
 	if (!paymentResponse || !paymentResponse.client_secret) {
 		throw new PaymentError('Payment initiation failed');
 	}
-
-	const payment = await createPayment(price * 100, reservation.id, userId, paymentResponse.intention_order_id);
+	console.log("ammountInCents", amountInCents);
+	const payment = await createPayment(amountInCents, reservation.id, userId, paymentResponse.intention_order_id);
 	const paymentUrl = await paymentGateway(paymentResponse);
 	if (!paymentUrl) {
 		throw new PaymentError('Payment URL generation failed');
 	}
 
 	const tickets = await createTicket(reservation, seatIds);
+	console.log('Tickets created:', tickets);
 	if (!tickets || tickets.length === 0) {
 		throw new DatabaseError('Failed to create tickets for the reservation');
 	}
