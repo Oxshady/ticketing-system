@@ -9,7 +9,19 @@ const governorates = [
     'Kafr El Sheikh', 'Arish'
 ];
 
-const trainTypes = ['EXPRESS', 'LOCAL', 'HIGH_SPEED'];
+// Replace old trainTypes with your schema enum values
+const trainTypes = [
+    'Talgo_First_Class',
+    'Talgo_Second_Class',
+    'First_Class_AC',
+    'Second_Class_AC',
+    'Second_Class_Non_AC',
+    'Third_Class_AC',
+    'Third_Class_Non_AC',
+    'Sleeper_shared_Class',
+    'Sleeper_single_class'
+];
+
 const seatClasses = ['ECONOMY', 'BUSINESS', 'FIRST_CLASS'];
 
 const popularRoutes = [
@@ -95,42 +107,45 @@ function generateDepartureTimes(count) {
     return times;
 }
 
-// Calculate trip price based on train type and duration
+// Update price calculation logic for new train types
 function calculateTripPrice(trainType, durationHours, basePrice = 50) {
     let priceMultiplier = 1;
-    
-    // Adjust for train type - using schema enum values
-    if (trainType === 'HIGH_SPEED') priceMultiplier = 2.5;
-    else if (trainType === 'EXPRESS') priceMultiplier = 1.8;
-    else if (trainType === 'LOCAL') priceMultiplier = 1.0;
-    
-    // Adjust for distance (longer trips cost more)
+
+    if (['Talgo_First_Class', 'First_Class_AC', 'Sleeper_single_class'].includes(trainType)) priceMultiplier = 2.5;
+    else if (['Talgo_Second_Class', 'Second_Class_AC', 'Second_Class_Non_AC', 'Sleeper_shared_Class'].includes(trainType)) priceMultiplier = 1.8;
+    else if (['Third_Class_AC', 'Third_Class_Non_AC'].includes(trainType)) priceMultiplier = 1.2;
+
     const distanceFactor = 1 + (durationHours * 0.1);
-    
-    // Calculate final price
-    return Math.round((basePrice * priceMultiplier * distanceFactor) / 10) * 10; // Round to nearest 10
+
+    return Math.round((basePrice * priceMultiplier * distanceFactor) / 10) * 10;
 }
 
-// Generate seat distribution based on train type
+// Update seat distribution logic for new train types
 function getSeatDistribution(trainType, capacity) {
     switch (trainType) {
-        case 'HIGH_SPEED':
+        case 'Talgo_First_Class':
+        case 'First_Class_AC':
+        case 'Sleeper_single_class':
+            return {
+                FIRST_CLASS: Math.floor(capacity * 0.5),
+                BUSINESS: Math.floor(capacity * 0.3),
+                ECONOMY: Math.floor(capacity * 0.2)
+            };
+        case 'Talgo_Second_Class':
+        case 'Second_Class_AC':
+        case 'Second_Class_Non_AC':
+        case 'Sleeper_shared_Class':
             return {
                 FIRST_CLASS: Math.floor(capacity * 0.2),
                 BUSINESS: Math.floor(capacity * 0.3),
                 ECONOMY: Math.floor(capacity * 0.5)
             };
-        case 'EXPRESS':
+        case 'Third_Class_AC':
+        case 'Third_Class_Non_AC':
             return {
-                FIRST_CLASS: Math.floor(capacity * 0.15),
-                BUSINESS: Math.floor(capacity * 0.25),
-                ECONOMY: Math.floor(capacity * 0.6)
-            };
-        case 'LOCAL':
-            return {
-                FIRST_CLASS: Math.floor(capacity * 0.1),
-                BUSINESS: Math.floor(capacity * 0.2),
-                ECONOMY: Math.floor(capacity * 0.7)
+                FIRST_CLASS: Math.floor(capacity * 0.05),
+                BUSINESS: Math.floor(capacity * 0.15),
+                ECONOMY: Math.floor(capacity * 0.8)
             };
         default:
             return {
