@@ -1,9 +1,15 @@
 const { initiatePayment } = require('../services/payment.services')
 const { updateTicketStatus, deleteTicket } = require('../services/ticket.services');
 const prisma = require('../config/prisma/client');
-const {reservationStatusUpdate, deleteReservation} = require('../services/reservation.services');
-const { updatePaymentStatus , getFailedPayment, deletePayment} = require('../services/payment.services');
+const { reservationStatusUpdate, deleteReservation } = require('../services/reservation.services');
+const { updatePaymentStatus, getFailedPayment, deletePayment } = require('../services/payment.services');
 const { PaymentError } = require('../utils/errorTypes.utils');
+const {
+	calculatePoints,
+	getUserLoyaltyPoints,
+	addLoyaltyPoints,
+	getSeatsIds
+} = require('../services/loyality.services');
 const { de } = require('@faker-js/faker');
 
 const statusController = async (req, res) => {
@@ -27,8 +33,19 @@ const statusController = async (req, res) => {
 		for (const ticket of updatedReservation.tickets) {
 			await updateTicketStatus(ticket.id, 'RESERVED');
 		}
+		const seatIds = await getSeatsIds(updatedReservation);
+		if (!seatIds || seatIds.length === 0) {
+			throw new PaymentError('Fuclllllllllllllllllllllll');
+		}
+		const points = await calculatePoints(updatedReservation, seatIds);
+		if (points > 0) {
+			const userPoints = await getUserLoyaltyPoints(updatedReservation.userId);
+			const newPoints = await addLoyaltyPoints(updatedReservation.userId, points);
+			console.log(`User ${updatedReservation.userId} has have ${userPoints} has been awarded ${points} points. Total points: ${newPoints}`);
+		}
+
 	} else {
-		const failedPayment = getFailedPayment(orderId);
+		const failedPayment = await getFailedPayment(orderId);
 		if (failedPayment?.reservation?.tickets) {
 			for (const ticket of failedPayment.reservation.tickets) {
 				await deleteTicket(ticket.id);
@@ -47,7 +64,7 @@ const statusController = async (req, res) => {
 
 
 const redirectController = async (req, res) => {
-	res.json({reqbody: req.body, reqquery: req.query, reqparams: req.params});
+	res.json({ reqbody: req.body, reqquery: req.query, reqparams: req.params });
 }
 
 module.exports = {

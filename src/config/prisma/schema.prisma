@@ -43,9 +43,15 @@ enum TrainStatus {
 }
 
 enum TrainType {
-  EXPRESS
-  LOCAL
-  HIGH_SPEED
+  Talgo_First_Class
+  Talgo_Second_Class
+  First_Class_AC
+  Second_Class_AC
+  Second_Class_Non_AC
+  Third_Class_AC
+  Third_Class_Non_AC
+  Sleeper_shared_Class
+  Sleeper_single_class
 }
 
 enum SeatClass {
@@ -150,6 +156,7 @@ model Payment {
   paymobOrderId String?       @unique
   reservation   Reservation   @relation(fields: [reservationId], references: [id], onDelete: Cascade)
   reservationId String        @unique
+  pointsToRedeem Int?
 
   @@index([userId])
   @@index([status])

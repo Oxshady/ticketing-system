@@ -8,7 +8,10 @@ const { BadRequestError, PaymentError, DatabaseError } = require('../utils/error
 
 const makeReservation = async (req, res) => {
 	const { userId, tripId, tripTourPackageId, seatIds } = req.body;
-
+	const user = await getUser(userId);
+	if (!user) {
+		throw new DatabaseError('User not found');
+	}
 	if ((!tripId && !tripTourPackageId) || !userId || !seatIds || seatIds.length === 0) {
 		throw new BadRequestError('Missing required fields: userId, tripId or tripTourPackageId, and seatIds');
 	}
@@ -32,11 +35,13 @@ const makeReservation = async (req, res) => {
 		throw new DatabaseError('Failed to create reservation');
 	}
 	console.log('Reservation created:', reservation);
-	const user = await getUser(userId);
-	if (!user) {
-		throw new DatabaseError('User not found');
-	}
 
+	const tickets = await createTicket(reservation, seatIds);
+	console.log('Tickets created:', tickets);
+	if (!tickets || tickets.length === 0) {
+		throw new DatabaseError('Failed to create tickets for the reservation');
+	}
+	//
 	const amountInCents = Math.round(price * 100);
 	const paymentResponse = await initiatePayment(amountInCents, user);
 	if (!paymentResponse || !paymentResponse.client_secret) {
@@ -49,11 +54,7 @@ const makeReservation = async (req, res) => {
 		throw new PaymentError('Payment URL generation failed');
 	}
 
-	const tickets = await createTicket(reservation, seatIds);
-	console.log('Tickets created:', tickets);
-	if (!tickets || tickets.length === 0) {
-		throw new DatabaseError('Failed to create tickets for the reservation');
-	}
+
 
 	res.status(201).json({ paymentResponse, paymentUrl });
 };
