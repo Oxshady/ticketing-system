@@ -8,7 +8,8 @@ const {
 	calculatePoints,
 	getUserLoyaltyPoints,
 	addLoyaltyPoints,
-	getSeatsIds
+	getSeatsIds,
+	reducePoints
 } = require('../services/loyality.services');
 const { de } = require('@faker-js/faker');
 
@@ -42,6 +43,11 @@ const statusController = async (req, res) => {
 			const userPoints = await getUserLoyaltyPoints(updatedReservation.userId);
 			const newPoints = await addLoyaltyPoints(updatedReservation.userId, points);
 			console.log(`User ${updatedReservation.userId} has have ${userPoints} has been awarded ${points} points. Total points: ${newPoints}`);
+		}
+		if (updatedPayment.pointsToRedeem > 0) {
+			const userPoints = await getUserLoyaltyPoints(updatedReservation.userId);
+			const newPoints = await reducePoints(updatedReservation.userId, updatedPayment.pointsToRedeem);
+			console.log(`User ${updatedReservation.userId} has redeemed ${updatedPayment.pointsToRedeem} points. Total points: ${newPoints}`);
 		}
 
 	} else {

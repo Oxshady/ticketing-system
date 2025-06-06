@@ -145,9 +145,24 @@ const addLoyaltyPoints = async (userId, points) => {
 	return await getUserLoyaltyPoints(userId);
 };
 
+const reducePoints = async (userId, points) => {
+	if (points <= 0) throw new Error('Points must be greater than zero');
+	const user = await prisma.user.findUnique({
+		where: { id: userId },
+	});
+	if (!user) throw new Error('User not found');
+	if (user.points < points) throw new Error('Insufficient points');
+	await prisma.user.update({
+		where: { id: userId },
+		data: { points: { decrement: points } },
+	});
+	return await getUserLoyaltyPoints(userId);
+};
+
 module.exports = {
 	calculatePoints,
 	getUserLoyaltyPoints,
 	addLoyaltyPoints,
 	getSeatsIds,
+	reducePoints,
 };

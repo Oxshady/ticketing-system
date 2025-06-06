@@ -69,7 +69,7 @@ const paymentGateway = async (paymentResponse) => {
 	}
 }
 
-const createPayment = async (price, reservationId, userId, paymobOrderId) => {
+const createPayment = async (price, reservationId, userId, paymobOrderId, pointsToRedeem=0) => {
 	const payment = await prisma.payment.create({
 		data: {
 			amount: price,
@@ -77,6 +77,7 @@ const createPayment = async (price, reservationId, userId, paymobOrderId) => {
 			userId: userId,
 			paymobOrderId: JSON.stringify(paymobOrderId),
 			method: 'CARD',
+			pointsToRedeem: pointsToRedeem,
 		}
 	});
 	if (!payment) {
