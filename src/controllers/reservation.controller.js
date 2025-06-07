@@ -6,133 +6,120 @@ const { getUser } = require('../services/user.services');
 const { createPayment } = require('../services/payment.services');
 const { calculatePartialDiscount } = require('../services/redeemption.services');
 const { BadRequestError, PaymentError, DatabaseError } = require('../utils/errorTypes.utils');
-const { el, tr } = require('@faker-js/faker');
 const { getTrainClass } = require('../services/train.services');
-const {reducePoints} = require('../services/loyality.services');
-const { use } = require('passport');
+const { reducePoints } = require('../services/loyality.services');
+
 const fullRedemptionPointsCost = {
   third_class_ac: 700,
   second_class_non_ac: 950,
   second_class_ac: 1200,
   first_class_ac: 1800,
-  shared_sleeper_class: 2500,
-  single_sleeper_class: 3500,
+  sleeper_shared_class: 2500,
+  sleeper_single_class: 3500,
 };
 
-const makeReservation = async (req, res) => {
-	const { userId, tripId, tripTourPackageId, seatIds, pointsToRedeem, redemptionType } = req.body;
-	console.log(pointsToRedeem, redemptionType);
-	const user = await getUser(userId);
-	let trainClass = null;
-	if (!user) {
-		throw new DatabaseError('User not found');
-	}
+
+async function validateRequestBody(reqBody) {
+	const { userId, tripId, tripTourPackageId, seatIds } = reqBody;
 	if ((!tripId && !tripTourPackageId) || !userId || !seatIds || seatIds.length === 0) {
 		throw new BadRequestError('Missing required fields: userId, tripId or tripTourPackageId, and seatIds');
 	}
 	if (tripId && tripTourPackageId) {
 		throw new BadRequestError('Provide either tripId or tripTourPackageId, not both');
 	}
+}
 
-	let price = 0;
+async function calculateReservationPriceAndClass(tripId, tripTourPackageId, seatIds) {
+	let price, trainClass;
+
 	if (tripTourPackageId) {
 		price = await ReservationPrice(null, seatIds, tripTourPackageId);
 		trainClass = await getTrainClass(null, tripTourPackageId);
-		if (!trainClass) {
-			throw new BadRequestError('Could not determine train class for trip tour package');
-		}
-	} else if (tripId) {
-		trainClass = await getTrainClass(tripId, null);
-		if (!trainClass) {
-			throw new BadRequestError('Could not determine train class for trip');
-		}
+	} else {
 		price = await ReservationPrice(tripId, seatIds, null);
+		trainClass = await getTrainClass(tripId, null);
 	}
+
+	if (!trainClass) {
+		throw new BadRequestError('Could not determine train class');
+	}
+
+	return { price, trainClass };
+}
+
+function applyPartialDiscount(user, pointsToRedeem, price) {
+	if (pointsToRedeem > user.points) {
+		throw new BadRequestError('Insufficient points for partial discount');
+	}
+	const { pointsUsed, discount } = calculatePartialDiscount(pointsToRedeem, user.points);
+	console.log('Points used:', pointsUsed, 'Discount:', discount);
+	if (discount >= price) {
+		throw new BadRequestError('Discount exceeds or equals the total price');
+	}
+	return { price: price - discount, pointsUsed, discount };
+}
+
+function applyFullRedemption(user, trainClass) {
+	const requiredPoints = fullRedemptionPointsCost[trainClass.toLowerCase()];
+	if (!requiredPoints) {
+		throw new BadRequestError('Full redemption not available for this train class');
+	}
+	if (user.points < requiredPoints) {
+		throw new BadRequestError('Insufficient points for full redemption');
+	}
+	return { price: 0, pointsUsed: requiredPoints };
+}
+
+async function handleFullRedemptionFlow(userId, reservation, tickets, pointsUsed, res) {
+	await reducePoints(userId, pointsUsed);
+	await reservationStatusUpdate(reservation.id, 'CONFIRMED');
+	for (const ticket of tickets) {
+		await updateTicketStatus(ticket.id, 'RESERVED');
+	}
+	return res.status(201).json({ reservation, tickets, pointsUsed, discount: 0 });
+}
+
+
+const makeReservation = async (req, res) => {
+	const { userId, tripId, tripTourPackageId, seatIds, pointsToRedeem, redemptionType } = req.body;
+
+	const user = await getUser(userId);
+	if (!user) throw new DatabaseError('User not found');
+
+	await validateRequestBody(req.body);
+
+	let { price, trainClass } = await calculateReservationPriceAndClass(tripId, tripTourPackageId, seatIds);
+
 	let pointsUsed = 0;
 	let discount = 0;
-	if (redemptionType === 'partial_discount' && pointsToRedeem && pointsToRedeem > 0) {
-		console.log('Calculating partial discount with points:', pointsToRedeem);
-		console.log('User points:', user.points);
-		if (pointsToRedeem > user.points) {
-			throw new BadRequestError('Insufficient points for partial discount');
-		}
-		const result = calculatePartialDiscount(pointsToRedeem, user.points);
-		console.log('Partial discount result:', result);
-		pointsUsed = result.pointsUsed;
-		discount = result.discount;
-		if (discount > price || discount === price) {
-			throw new BadRequestError('Discount exceeds the total price or equals it and cannot be applied fully');
-		}
-		price = price - discount;
-		console.log('Discount applied:', discount, 'Points used:', pointsUsed, 'New price:', price);
+
+	if (redemptionType === 'partial_discount' && pointsToRedeem > 0) {
+		({ price, pointsUsed, discount } = applyPartialDiscount(user, pointsToRedeem, price));
+	} else if (redemptionType === 'full_discount') {
+		({ price, pointsUsed } = applyFullRedemption(user, trainClass));
 	}
-	if (price <= 0) {
+
+	if (price <= 0 && redemptionType !== 'full_discount') {
 		throw new BadRequestError('Invalid calculated price');
 	}
-	else if (redemptionType === 'full_discount') {
-		const trainClass = await getTrainClass(tripId, tripTourPackageId);
-		if (!trainClass) {
-			throw new BadRequestError('Could not determine train class for full redemption');
-		}
-
-		const requiredPoints = fullRedemptionPointsCost[trainClass.toLowerCase()];
-		console.log(`Required points for full redemption of class ${trainClass}:`, requiredPoints);
-		if (!requiredPoints) {
-			throw new BadRequestError('Full redemption not available for this train class');
-		}
-
-		if (user.points < requiredPoints) {
-			throw new BadRequestError('Insufficient points for full redemption');
-		}
-
-		pointsUsed = requiredPoints;
-		price = 0;
-
-		console.log(`Full redemption for class ${trainClass} with ${pointsUsed} points`);
-
-	}
-	console.log('Calculated price:', price);
-
 
 	const reservation = await createReservation(userId, tripId, tripTourPackageId, price);
-	if (!reservation) {
-		throw new DatabaseError('Failed to create reservation');
-	}
-	console.log('Reservation created:', reservation);
+	if (!reservation) throw new DatabaseError('Failed to create reservation');
 
 	const tickets = await createTicket(reservation, seatIds);
-	console.log('Tickets created:', tickets);
-	if (!tickets || tickets.length === 0) {
-		throw new DatabaseError('Failed to create tickets for the reservation');
+	if (!tickets || tickets.length === 0) throw new DatabaseError('Failed to create tickets');
+
+	if (redemptionType === 'full_discount') {
+		return handleFullRedemptionFlow(userId, reservation, tickets, pointsUsed, res);
 	}
-	if (redemptionType === 'full_discount'){
-		if(user.points < pointsUsed) {
-			throw new BadRequestError('Insufficient points for full redemption');
-		}
-		await reducePoints(userId, pointsUsed);
-		console.log(`Reduced ${pointsUsed} points from user ${userId} for full redemption`);
-		reservationStatusUpdate(reservation.id, 'CONFIRMED');
-		console.log(`Reservation ${reservation.id} status updated to CONFIRMED`);
-		for (const ticket of tickets) {
-			await updateTicketStatus(ticket.id, 'RESERVED');
-			console.log(`Ticket ${ticket.id} status updated to RESERVED`);
-		}
-		return res.status(201).json({ reservation, tickets, pointsUsed, discount });
-		
-	}
+
 	const amountInCents = Math.round(price * 100);
 	const paymentResponse = await initiatePayment(amountInCents, user);
-	if (!paymentResponse || !paymentResponse.client_secret) {
-		throw new PaymentError('Payment initiation failed');
-	}
-	console.log("ammountInCents", amountInCents);
-	const payment = await createPayment(amountInCents / 100, reservation.id, userId, paymentResponse.intention_order_id, pointsUsed );
+	if (!paymentResponse?.client_secret) throw new PaymentError('Payment initiation failed');
+
+	const payment = await createPayment(price, reservation.id, userId, paymentResponse.intention_order_id, pointsUsed);
 	const paymentUrl = await paymentGateway(paymentResponse);
-	if (!paymentUrl) {
-		throw new PaymentError('Payment URL generation failed');
-	}
-
-
+	if (!paymentUrl) throw new PaymentError('Payment URL generation failed');
 
 	res.status(201).json({ paymentResponse, paymentUrl });
 };
