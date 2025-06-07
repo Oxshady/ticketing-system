@@ -11,12 +11,12 @@ const { getTrainClass } = require('../services/train.services');
 const {reducePoints} = require('../services/loyality.services');
 const { use } = require('passport');
 const fullRedemptionPointsCost = {
-  third_class: 700,
+  third_class_ac: 700,
   second_class_non_ac: 950,
   second_class_ac: 1200,
   first_class_ac: 1800,
-  shared_sleeper_cabin: 2500,
-  single_sleeper_cabin: 3500,
+  shared_sleeper_class: 2500,
+  single_sleeper_class: 3500,
 };
 
 const makeReservation = async (req, res) => {
@@ -66,13 +66,17 @@ const makeReservation = async (req, res) => {
 		price = price - discount;
 		console.log('Discount applied:', discount, 'Points used:', pointsUsed, 'New price:', price);
 	}
+	if (price <= 0) {
+		throw new BadRequestError('Invalid calculated price');
+	}
 	else if (redemptionType === 'full_discount') {
 		const trainClass = await getTrainClass(tripId, tripTourPackageId);
 		if (!trainClass) {
 			throw new BadRequestError('Could not determine train class for full redemption');
 		}
 
-		const requiredPoints = fullRedemptionPointsCost[trainClass];
+		const requiredPoints = fullRedemptionPointsCost[trainClass.toLowerCase()];
+		console.log(`Required points for full redemption of class ${trainClass}:`, requiredPoints);
 		if (!requiredPoints) {
 			throw new BadRequestError('Full redemption not available for this train class');
 		}
@@ -88,9 +92,7 @@ const makeReservation = async (req, res) => {
 
 	}
 	console.log('Calculated price:', price);
-	if (price <= 0) {
-		throw new BadRequestError('Invalid calculated price');
-	}
+
 
 	const reservation = await createReservation(userId, tripId, tripTourPackageId, price);
 	if (!reservation) {

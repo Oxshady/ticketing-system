@@ -17,7 +17,7 @@ const createTicket = async (reservation, seatIds) => {
 		tripId = tripTourPackage.tripId;
 	}
 	console.log('Creating tickets for reservation:', reservation.id, 'with tripId:', tripId, 'and seatIds:', seatIds);
-	const tickets = await prisma.ticket.createMany({
+	let tickets = await prisma.ticket.createMany({
 		data: seatIds.map(seatId => ({
 			reservationId: reservation.id,
 			seatId,
@@ -26,8 +26,15 @@ const createTicket = async (reservation, seatIds) => {
 	});
 	console.log('ghikkksdadmaskjansjkndsajkndasjknadsjkasjknasjkndjknadjkanjkdnsajkd');
 	console.log('Tickets created:', tickets);
-	return tickets;
-
+	tickets = await prisma.ticket.findMany({
+        where: {
+            reservationId: reservation.id,
+            seatId: { in: seatIds },
+            tripId: tripId,
+        },
+    });
+    console.log('Tickets created:', tickets);
+    return tickets;
 }
 
 const getTicketsByReservationId = async (reservationId) => {
