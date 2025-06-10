@@ -71,12 +71,14 @@ function applyFullRedemption(user, trainClass) {
 }
 
 async function handleFullRedemptionFlow(userId, reservation, tickets, pointsUsed, res) {
+	let updatedTickets = []
+	let updatedReservation = null;
 	await reducePoints(userId, pointsUsed);
-	await reservationStatusUpdate(reservation.id, 'CONFIRMED');
 	for (const ticket of tickets) {
-		await updateTicketStatus(ticket.id, 'RESERVED');
+		updatedTickets.push(await updateTicketStatus(ticket.id, 'RESERVED'));
 	}
-	return res.status(201).json({ reservation, tickets, pointsUsed });
+	updatedReservation = await reservationStatusUpdate(reservation.id, 'CONFIRMED');
+	return res.status(201).json({reservation: updatedReservation});
 }
 
 

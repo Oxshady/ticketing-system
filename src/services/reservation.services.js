@@ -1,3 +1,4 @@
+const passport = require('passport');
 const prisma = require('../config/prisma/client');
 
 const createReservation = async (userId, tripId, tripTourPackageId, price) => {
@@ -119,7 +120,14 @@ const reservationStatusUpdate = async (id, status) => {
 			status,
 		},
 		include: {
-			user: true,
+			user: {
+				include:{
+					password: false,
+					createdAt: false,
+					updatedAt: false,
+					googleId: false,
+				}
+			},
 			trip: true,
 			tripTourPackage: true,
 			tickets: true,
