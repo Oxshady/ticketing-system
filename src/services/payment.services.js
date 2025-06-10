@@ -122,11 +122,40 @@ const deletePayment = async (orderId) => {
 	return deletedPayment;
 }
 
+const getPaymentByUserId = async (userId) => {
+	const payments = await prisma.payment.findMany({
+		where: { userId: userId },
+		include: {
+			reservation: {
+				include: { tickets: true },
+			},
+		},
+	});
+	return payments;
+}
+
+const getPaymentById = async (id) => {
+	const payment = await prisma.payment.findUnique({
+		where: { id: id },
+		include: {
+			reservation: {
+				include: { tickets: true },
+			},
+		},
+	});
+	if (!payment) {
+		throw new Error('Payment not found');
+	}
+	return payment;
+}
+
 module.exports = {
 	initiatePayment,
 	paymentGateway,
 	createPayment,
 	updatePaymentStatus,
 	getFailedPayment,
-	deletePayment
+	deletePayment,
+	getPaymentByUserId,
+	getPaymentById
 };

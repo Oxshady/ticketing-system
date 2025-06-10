@@ -47,9 +47,14 @@ const getReservationById = async (id) => {
 			id,
 		},
 		include: {
-			user: true,
 			trip: true,
 			tripTourPackage: true,
+			tickets: {
+				include: {
+					seat: true,
+				},
+			},
+			payment: true,
 		},
 	});
 	return reservation;

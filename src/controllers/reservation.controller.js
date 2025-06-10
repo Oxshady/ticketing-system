@@ -1,5 +1,5 @@
 const { ReservationPrice } = require('../utils/reservation.utils');
-const { createReservation, reservationStatusUpdate } = require('../services/reservation.services');
+const { createReservation, reservationStatusUpdate ,getReservationById, reservationsByUserId} = require('../services/reservation.services');
 const { initiatePayment, paymentGateway } = require('../services/payment.services');
 const { createTicket, updateTicketStatus } = require('../services/ticket.services');
 const { getUser } = require('../services/user.services');
@@ -126,6 +126,37 @@ const makeReservation = async (req, res) => {
 	res.status(201).json({ paymentUrl });
 };
 
+
+const getReservationController = async (req, res) => {
+	const { reservationId } = req.body;
+	if (!reservationId) {
+		throw new BadRequestError('Reservation ID is required');
+	}
+
+	const reservation = await getReservationById(reservationId);
+	if (!reservation) {
+		return res.status(404).json({ message: 'Reservation not found' });
+	}
+
+	return res.status(200).json(reservation);
+};
+
+const getReservationOfUserController = async (req, res) => {
+	const userId = req.user.id;
+	if (!userId) {
+		throw new BadRequestError('User ID is required');
+	}
+
+	const reservations = await reservationsByUserId(userId);
+	if (!reservations || reservations.length === 0) {
+		return res.status(404).json({ message: 'No reservations found for this user' });
+	}
+
+	return res.status(200).json(reservations);
+}
+
 module.exports = {
 	makeReservation,
+	getReservationController,
+	getReservationOfUserController
 };
