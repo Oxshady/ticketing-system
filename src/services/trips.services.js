@@ -56,7 +56,41 @@ const getTripTourPackages = async (page = 1, limit = 10) => {
 	};
 };
 
+const getTrip = async (id) => {
+	if (!id) {
+		throw new Error('Trip ID is required');
+	}
+	const trip = await prisma.trip.findUnique({
+		where: { id },
+		include: {
+			train: true,
+		},
+	});
+	if (!trip) {
+		throw new Error('Trip not found');
+	}
+	return trip;
+};
+const getTripTourPackage = async (id) => {
+	if (!id) {
+		throw new Error('Trip Tour Package ID is required');
+	}
+	const tripTourPackage = await prisma.tripTourPackage.findUnique({
+		where: { id },
+		include: {
+			trip: true,
+			tourPackage: true,
+		},
+	});
+	if (!tripTourPackage) {
+		throw new Error('Trip Tour Package not found');
+	}
+	return tripTourPackage;
+};
+
 module.exports = {
 	getTrips,
 	getTripTourPackages,
+	getTrip,
+	getTripTourPackage,
 };
