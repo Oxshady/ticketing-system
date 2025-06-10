@@ -8,21 +8,15 @@ const getTrips = async (page = 1, limit = 10) => {
 	if (limit > 50) limit = 50;
 
 	const skip = (page - 1) * limit;
-	const [trips, totalTrips] = await Promise.all([
-		prisma.trip.findMany({
-			skip,
-			take: limit,
-			orderBy: { createdAt: 'desc' },
-			include: {
-				train: true,
-				tripTourPackage: true,
-				tickets: true,
-			},
-		}),
-		prisma.trip.count(),
-	]);
-	console.log('Trips retrieved:', trips.length, 'Total trips:', totalTrips);
-
+	const trips = await prisma.trip.findMany({
+		skip,
+		take: limit,
+		orderBy: { createdAt: 'desc' },
+		include: {
+			train: true,
+		},
+	});
+	const totalTrips = await prisma.trip.count(); 
 	return {
 		trips,
 		totalTrips,
@@ -41,18 +35,16 @@ const getTripTourPackages = async (page = 1, limit = 10) => {
 	if (limit > 50) limit = 50;
 
 	const skip = (page - 1) * limit;
-	const [tripTourPackages, totalTripTourPackages] = await Promise.all([
-		prisma.tripTourPackage.findMany({
-			skip,
-			take: limit,
-			orderBy: { createdAt: 'desc' },
-			include: {
-				trip: true,
-				package: true,
-			},
-		}),
-		prisma.tripTourPackage.count(),
-	]);
+	const tripTourPackages = await prisma.tripTourPackage.findMany({
+		skip,
+		take: limit,
+		orderBy: { createdAt: 'desc' },
+		include: {
+			trip: true,
+			tourPackage: true,
+		},
+	});
+	const totalTripTourPackages = await prisma.tripTourPackage.count(); 
 
 	return {
 		tripTourPackages,

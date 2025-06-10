@@ -95,7 +95,8 @@ model TripTourPackage {
   tourPackage   TourPackage   @relation(fields: [tourPackageId], references: [id])
   tourPackageId String
   reservations  Reservation[]
-
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
   @@unique([tripId, tourPackageId])
   @@index([tripId])
   @@index([tourPackageId])
