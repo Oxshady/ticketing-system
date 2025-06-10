@@ -76,7 +76,7 @@ async function handleFullRedemptionFlow(userId, reservation, tickets, pointsUsed
 	for (const ticket of tickets) {
 		await updateTicketStatus(ticket.id, 'RESERVED');
 	}
-	return res.status(201).json({ reservation, tickets, pointsUsed, discount: 0 });
+	return res.status(201).json({ reservation, tickets, pointsUsed });
 }
 
 
@@ -121,7 +121,7 @@ const makeReservation = async (req, res) => {
 	const paymentUrl = await paymentGateway(paymentResponse);
 	if (!paymentUrl) throw new PaymentError('Payment URL generation failed');
 
-	res.status(201).json({ paymentResponse, paymentUrl });
+	res.status(201).json({ paymentUrl });
 };
 
 module.exports = {
