@@ -137,7 +137,9 @@ const getReservationController = async (req, res) => {
 	if (!reservation) {
 		return res.status(404).json({ message: 'Reservation not found' });
 	}
-
+	if (reservation.userId !== req.user.id) {
+		throw new BadRequestError('You do not have permission to view this reservation');
+	}
 	return res.status(200).json(reservation);
 };
 

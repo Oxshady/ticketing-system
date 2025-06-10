@@ -47,8 +47,21 @@ const getReservationById = async (id) => {
 			id,
 		},
 		include: {
-			trip: true,
-			tripTourPackage: true,
+			trip: {
+				include:{
+					train: true,
+				}
+			},
+			tripTourPackage: {
+				include: {
+					trip: {
+						include: {
+							train: true,
+						}
+					},
+					tourPackage: true,
+				},
+			},
 			tickets: {
 				include: {
 					seat: true,
@@ -96,7 +109,14 @@ const reservationsByTripId = async (tripId) => {
 			tripId,
 		},
 		include: {
-			user: true,
+			user: {
+				include: {
+					password: false,
+					createdAt: false,
+					updatedAt: false,
+					googleId: false,
+				},
+			},
 			trip: true,
 			tripTourPackage: true,
 		},
@@ -110,7 +130,14 @@ const reservationsByTripTourPackageId = async (tripTourPackageId) => {
 			tripTourPackageId,
 		},
 		include: {
-			user: true,
+			user: {
+				include: {
+					password: false,
+					createdAt: false,
+					updatedAt: false,
+					googleId: false,
+				},
+			},
 			trip: true,
 			tripTourPackage: true,
 		},
