@@ -20,9 +20,9 @@ const fullRedemptionPointsCost = {
 
 
 async function validateRequestBody(reqBody) {
-	const { userId, tripId, tripTourPackageId, seatIds } = reqBody;
-	if ((!tripId && !tripTourPackageId) || !userId || !seatIds || seatIds.length === 0) {
-		throw new BadRequestError('Missing required fields: userId, tripId or tripTourPackageId, and seatIds');
+	const { tripId, tripTourPackageId, seatIds } = reqBody;
+	if ((!tripId && !tripTourPackageId) || !seatIds || seatIds.length === 0) {
+		throw new BadRequestError('Missing required fields: tripId or tripTourPackageId, and seatIds');
 	}
 	if (tripId && tripTourPackageId) {
 		throw new BadRequestError('Provide either tripId or tripTourPackageId, not both');
@@ -81,8 +81,8 @@ async function handleFullRedemptionFlow(userId, reservation, tickets, pointsUsed
 
 
 const makeReservation = async (req, res) => {
-	const { userId, tripId, tripTourPackageId, seatIds, pointsToRedeem, redemptionType } = req.body;
-
+	const {tripId, tripTourPackageId, seatIds, pointsToRedeem, redemptionType } = req.body;
+	const userId = req.user.id;
 	const user = await getUser(userId);
 	if (!user) throw new DatabaseError('User not found');
 

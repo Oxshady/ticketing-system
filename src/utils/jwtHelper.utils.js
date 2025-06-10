@@ -7,7 +7,7 @@ const createToken = async (payload) =>{
 }
 const verifyToken = async (encodedToken) =>{
 	try{
-		const token = encodedToken.split(' ')[1]
+		const token = encodedToken
 		const user = jwt.verify(token, secret)
 		return user
 	}
