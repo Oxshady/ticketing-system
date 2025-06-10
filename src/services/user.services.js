@@ -36,6 +36,10 @@ const getUser = async (id) => {
 		{
 			where: {
 				id
+			},
+			include: {
+				password: false,
+				googleId: false
 			}
 		}
 	)
@@ -56,27 +60,31 @@ const updateData = async (id, data) => {
 		},
 		data: filteredData
 	})
+	return {
+		id: user.id,
+		firstName: user.firstName,
+		lastName: user.lastName,
+		email: user.email
+	}
 }
 
 const deleteUser = async (id) => {
 	const user = await prisma.user.delete({
 		where: {
 			id
-		}
+		},
 	})
-	return user
+	return user.firstName + ' ' + user.lastName
 }
 
 const foundUser = async (email) => {
 	const user = await prisma.user.findUnique({
 		where: {
 			email
-		}
+		},
 	})
 	if (user)
 		return user
-	else
-		return false
 }
 module.exports = {
 	createUser,
