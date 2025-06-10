@@ -10,6 +10,7 @@ const tripController = async (req, res) =>{
 		throw new BadRequestError('Trip ID is required');
 	}
 	const tripsData = await getTrips(page, limit, tripId);
+	console.log(tripsData);
 	res.status(200).json({
 		message: 'Trips retrieved successfully',
 		data: tripsData,

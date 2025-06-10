@@ -21,6 +21,7 @@ const getTrips = async (page = 1, limit = 10) => {
 		}),
 		prisma.trip.count(),
 	]);
+	console.log('Trips retrieved:', trips.length, 'Total trips:', totalTrips);
 
 	return {
 		trips,
