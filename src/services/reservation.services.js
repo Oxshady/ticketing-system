@@ -5,7 +5,7 @@ const createReservation = async (userId, tripId, tripTourPackageId, price) => {
 	if (!userId || (!tripId && !tripTourPackageId)) {
 		throw new Error('User ID, Trip ID, and Trip Tour Package ID are required to create a reservation.');
 	}
-	let reservation=null;
+	let reservation = null;
 	if (tripId && !tripTourPackageId) {
 		reservation = await prisma.reservation.create({
 			data: {
@@ -75,7 +75,14 @@ const reservationsByUserId = async (userId) => {
 			userId,
 		},
 		include: {
-			user: true,
+			user: {
+				include: {
+					password: false,
+					createdAt: false,
+					updatedAt: false,
+					googleId: false,
+				},
+			},
 			trip: true,
 			tripTourPackage: true,
 		},
@@ -126,7 +133,7 @@ const reservationStatusUpdate = async (id, status) => {
 		},
 		include: {
 			user: {
-				include:{
+				include: {
 					password: false,
 					createdAt: false,
 					updatedAt: false,
