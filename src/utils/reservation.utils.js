@@ -5,6 +5,12 @@ const { reducePoints } = require('../services/loyality.services');
 const { calculatePartialDiscount } = require('../services/redeemption.services');
 const { updateTicketStatus } = require('../services/ticket.services');
 const { reservationStatusUpdate } = require('../services/reservation.services');
+const {
+	calculatePoints,
+	getUserLoyaltyPoints,
+	addLoyaltyPoints,
+	getSeatsIds
+} = require('../services/loyality.services');
 const fullRedemptionPointsCost = {
   third_class_ac: 700,
   second_class_non_ac: 950,
@@ -52,6 +58,17 @@ const handleFullRedemptionFlow = async (userId, reservation, tickets, pointsUsed
 		updatedTickets.push(await updateTicketStatus(ticket.id, 'RESERVED'));
 	}
 	updatedReservation = await reservationStatusUpdate(reservation.id, 'CONFIRMED');
+	const seatIds = await getSeatsIds(updatedReservation);
+		if (!seatIds || seatIds.length === 0) {
+			throw new BadRequestError('no seats found for the reservation');
+		}
+	const points = await calculatePoints(updatedReservation, seatIds);
+	console.log(`Points calculated for reservation ${updatedReservation.id}: ${points}`);
+		if (points > 0) {
+			const userPoints = await getUserLoyaltyPoints(updatedReservation.userId);
+			const newPoints = await addLoyaltyPoints(updatedReservation.userId, points);
+			console.log(`User ${updatedReservation.userId} has have ${userPoints} has been awarded ${points} points. Total points: ${newPoints}`);
+		}
 	return res.status(201).json({reservation: updatedReservation});
 }
 
