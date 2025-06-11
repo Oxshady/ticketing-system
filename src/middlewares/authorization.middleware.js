@@ -1,5 +1,5 @@
 const { verifyToken } = require('../utils/jwtHelper.utils');
-
+const { isAdmin } = require('../utils/admin.utils');
 const authorizationMiddleware = async (req, res, next) => {
 	try {
 		const authHeader = req.headers.authorization;
@@ -21,4 +21,12 @@ const authorizationMiddleware = async (req, res, next) => {
 	}
 };
 
-module.exports = {authorizationMiddleware};
+const adminOnly = (req, res, next) => {
+  if (!req.user || !isAdmin(req.user)) {
+    return res.status(403).json({ message: 'Admins only' });
+  }
+  next();
+};
+
+
+module.exports = {authorizationMiddleware, adminOnly};

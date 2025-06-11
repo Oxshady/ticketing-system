@@ -88,9 +88,80 @@ const getTripTourPackage = async (id) => {
 	return tripTourPackage;
 };
 
+
+const createTrip = async (data) => {
+	if (!data || !data.trainId || !data.price || !data.source || !data.destination || !data.stationLocation || !data.status) {
+		throw new Error('Missing required fields: trainId, price, source,destination, stationLocation,status');
+	}
+	const trip = await prisma.trip.create({
+		data,
+	});
+	return trip;
+}
+
+const createTripTourPackage = async (data) => {
+	if (!data || !data.tripId || !data.tourPackageId) {
+		throw new Error('Missing required fields: tripId, tourPackageId');
+	}
+	const tripTourPackage = await prisma.tripTourPackage.create({
+		data,
+	});
+	return tripTourPackage;
+};
+
+const updateTrip = async (id, data) => {
+	if (!id || !data) {
+		throw new Error('Trip ID and data are required for update');
+	}
+	const trip = await prisma.trip.update({
+		where: { id },
+		data,
+	});
+	return trip;
+};
+const updateTripTourPackage = async (id, data) => {
+	if (!id || !data) {
+		throw new Error('Trip Tour Package ID and data are required for update');
+	}
+	const tripTourPackage = await prisma.tripTourPackage.update({
+		where: { id },
+		data,
+	});
+	return tripTourPackage;
+};
+
+const deleteTrip = async (id) => {
+	if (!id) {
+		throw new Error('Trip ID is required for deletion');
+	}
+	const trip = await prisma.trip.delete({
+		where: { id },
+	});
+	return trip;
+};
+const deleteTripTourPackage = async (id) => {
+	if (!id) {
+		throw new Error('Trip Tour Package ID is required for deletion');
+	}
+	const tripTourPackage = await prisma.tripTourPackage.delete({
+		where: { id },
+	});
+	return tripTourPackage;
+};
+
+
+
+
 module.exports = {
 	getTrips,
 	getTripTourPackages,
 	getTrip,
 	getTripTourPackage,
+	createTrip,
+	createTripTourPackage,
+	updateTrip,
+	updateTripTourPackage,
+	deleteTrip,
+	deleteTripTourPackage
+
 };
