@@ -1,87 +1,16 @@
-const { ReservationPrice } = require('../utils/reservation.utils');
-const { createReservation, reservationStatusUpdate ,getReservationById, reservationsByUserId} = require('../services/reservation.services');
+const { createReservation ,getReservationById, reservationsByUserId} = require('../services/reservation.services');
 const { initiatePayment, paymentGateway } = require('../services/payment.services');
-const { createTicket, updateTicketStatus } = require('../services/ticket.services');
+const { createTicket } = require('../services/ticket.services');
 const { getUser } = require('../services/user.services');
 const { createPayment } = require('../services/payment.services');
-const { calculatePartialDiscount } = require('../services/redeemption.services');
 const { BadRequestError, PaymentError, DatabaseError } = require('../utils/errorTypes.utils');
-const { getTrainClass } = require('../services/train.services');
-const { reducePoints } = require('../services/loyality.services');
-
-const fullRedemptionPointsCost = {
-  third_class_ac: 700,
-  second_class_non_ac: 950,
-  second_class_ac: 1200,
-  first_class_ac: 1800,
-  sleeper_shared_class: 2500,
-  sleeper_single_class: 3500,
-};
-
-
-async function validateRequestBody(reqBody) {
-	const { tripId, tripTourPackageId, seatIds } = reqBody;
-	if ((!tripId && !tripTourPackageId) || !seatIds || seatIds.length === 0) {
-		throw new BadRequestError('Missing required fields: tripId or tripTourPackageId, and seatIds');
-	}
-	if (tripId && tripTourPackageId) {
-		throw new BadRequestError('Provide either tripId or tripTourPackageId, not both');
-	}
-}
-
-async function calculateReservationPriceAndClass(tripId, tripTourPackageId, seatIds) {
-	let price, trainClass;
-
-	if (tripTourPackageId) {
-		price = await ReservationPrice(null, seatIds, tripTourPackageId);
-		trainClass = await getTrainClass(null, tripTourPackageId);
-	} else {
-		price = await ReservationPrice(tripId, seatIds, null);
-		trainClass = await getTrainClass(tripId, null);
-	}
-
-	if (!trainClass) {
-		throw new BadRequestError('Could not determine train class');
-	}
-
-	return { price, trainClass };
-}
-
-function applyPartialDiscount(user, pointsToRedeem, price) {
-	if (pointsToRedeem > user.points) {
-		throw new BadRequestError('Insufficient points for partial discount');
-	}
-	const { pointsUsed, discount } = calculatePartialDiscount(pointsToRedeem, user.points);
-	console.log('Points used:', pointsUsed, 'Discount:', discount);
-	if (discount >= price) {
-		throw new BadRequestError('Discount exceeds or equals the total price');
-	}
-	return { price: price - discount, pointsUsed, discount };
-}
-
-function applyFullRedemption(user, trainClass) {
-	const requiredPoints = fullRedemptionPointsCost[trainClass.toLowerCase()];
-	if (!requiredPoints) {
-		throw new BadRequestError('Full redemption not available for this train class');
-	}
-	if (user.points < requiredPoints) {
-		throw new BadRequestError('Insufficient points for full redemption');
-	}
-	return { price: 0, pointsUsed: requiredPoints };
-}
-
-async function handleFullRedemptionFlow(userId, reservation, tickets, pointsUsed, res) {
-	let updatedTickets = []
-	let updatedReservation = null;
-	await reducePoints(userId, pointsUsed);
-	for (const ticket of tickets) {
-		updatedTickets.push(await updateTicketStatus(ticket.id, 'RESERVED'));
-	}
-	updatedReservation = await reservationStatusUpdate(reservation.id, 'CONFIRMED');
-	return res.status(201).json({reservation: updatedReservation});
-}
-
-
+const {
+	calculateReservationPriceAndClass,
+	applyPartialDiscount,
+	applyFullRedemption,
+	handleFullRedemptionFlow,
+	validateRequestBody,
+} = require('../utils/reservation.utils');
 const makeReservation = async (req, res) => {
 	const {tripId, tripTourPackageId, seatIds, pointsToRedeem, redemptionType } = req.body;
 	const userId = req.user.id;
