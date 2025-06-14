@@ -41,7 +41,7 @@ adminRouter.delete('/trip', catchAsync(deleteTripById));
 adminRouter.post('/trip', catchAsync(createNewTrip));
 
 adminRouter.get('/trip-tour-packages', catchAsync(getAllTripTourPackages));
-adminRouter.post('/trip-tour-package/getTourPackage', catchAsync(getTripTourPackageById));
+adminRouter.post('/trip-tour-package/getTripPackage', catchAsync(getTripTourPackageById));
 adminRouter.put('/trip-tour-package', catchAsync(updateTripTourPackageById));
 adminRouter.delete('/trip-tour-package', catchAsync(deleteTripTourPackageById));
 adminRouter.post('/trip-tour-package', catchAsync(createNewTripTourPackage));
