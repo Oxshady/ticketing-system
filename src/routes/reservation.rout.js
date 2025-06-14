@@ -5,7 +5,7 @@ const {makeReservation, getReservationController} = require('../controllers/rese
 const catchAsync = require('../utils/asyncWrapper.utils');
 const { authorizationMiddleware } = require('../middlewares/authorization.middleware');
 reservation.post('/', authorizationMiddleware, catchAsync(makeReservation));
-reservation.post('/', authorizationMiddleware, catchAsync(getReservationController))
+reservation.post('/getReservation', authorizationMiddleware, catchAsync(getReservationController))
 module.exports = {
 	reservation
 };
