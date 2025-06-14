@@ -29,7 +29,7 @@ adminRouter.use(authorizationMiddleware);
 adminRouter.use(adminOnly);
 
 adminRouter.get('/users', catchAsync(getAllUsers));
-adminRouter.post('/user', catchAsync(getUserById));
+adminRouter.post('/user/getUser', catchAsync(getUserById));
 adminRouter.put('/user', catchAsync(updateUser));
 adminRouter.delete('/user', catchAsync(deleteUserById));
 adminRouter.post('/user', catchAsync(createNewUser));
