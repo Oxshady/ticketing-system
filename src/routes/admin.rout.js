@@ -35,19 +35,19 @@ adminRouter.delete('/user', catchAsync(deleteUserById));
 adminRouter.post('/user', catchAsync(createNewUser));
 
 adminRouter.get('/trips', catchAsync(getAllTrips));
-adminRouter.post('/trip', catchAsync(getTripById));
+adminRouter.post('/trip/getTrip', catchAsync(getTripById));
 adminRouter.put('/trip', catchAsync(updateTripById));
 adminRouter.delete('/trip', catchAsync(deleteTripById));
 adminRouter.post('/trip', catchAsync(createNewTrip));
 
 adminRouter.get('/trip-tour-packages', catchAsync(getAllTripTourPackages));
-adminRouter.post('/trip-tour-package', catchAsync(getTripTourPackageById));
+adminRouter.post('/trip-tour-package/getTourPackage', catchAsync(getTripTourPackageById));
 adminRouter.put('/trip-tour-package', catchAsync(updateTripTourPackageById));
 adminRouter.delete('/trip-tour-package', catchAsync(deleteTripTourPackageById));
 adminRouter.post('/trip-tour-package', catchAsync(createNewTripTourPackage));
 
 adminRouter.get('/reservations', catchAsync(getAllReservations));
-adminRouter.post('/reservation', catchAsync(getReservation));
+adminRouter.post('/reservation/getReservation', catchAsync(getReservation));
 adminRouter.delete('/reservation', catchAsync(deleteReservationById));
 adminRouter.post('/reservation', catchAsync(createNewReservation));
 adminRouter.put('/reservation-status', catchAsync(updateReservationStatus));
