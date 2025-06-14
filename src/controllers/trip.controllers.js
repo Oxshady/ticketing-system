@@ -13,6 +13,16 @@ const tripController = async (req, res) =>{
 }
 
 const tripSeats = async (req, res) => {
+	console.log(req.params.tripId);
+	console.log("********************************************************************************")
+	console.log("tripId from body", req.body.tripId);
+	console.log("********************************************************************************")
+
+	console.log("req.params", req.params);
+	console.log("********************************************************************************")
+	console.log("req.body", req.body);
+	console.log("********************************************************************************")
+	console.log("req.query", req.query);
 	const tripId = req.body.tripId;
 	if (!tripId) {
 		return res.status(400).json({ message: 'Trip ID is required' });
