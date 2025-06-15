@@ -66,7 +66,7 @@ const statusController = async (req, res) => {
 		throw new PaymentError('Payment failed, reservation and tickets deleted');
 	}
 
-	res.sendStatus(200);
+	res.redirect("http://localhost:5173");
 };
 
 
