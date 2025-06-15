@@ -33,7 +33,13 @@ const createReservation = async (userId, tripId, tripTourPackageId, price) => {
 const getReservations = async () => {
 	const reservations = await prisma.reservation.findMany({
 		include: {
-			user: true,
+			user: 
+			{include: {
+	password: false,
+	createdAt: false,
+	updatedAt: false,
+	googleId: false,
+   }},
 			trip: true,
 			tripTourPackage: true,
 		},
