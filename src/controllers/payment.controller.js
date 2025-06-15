@@ -50,7 +50,7 @@ const statusController = async (req, res) => {
 			const newPoints = await reducePoints(updatedReservation.userId, updatedPayment.pointsToRedeem);
 			console.log(`User ${updatedReservation.userId} has redeemed ${updatedPayment.pointsToRedeem} points. Total points: ${newPoints}`);
 		}
-
+		res.redirect("http://localhost:5173")
 	} else {
 		const failedPayment = await getFailedPayment(orderId);
 		if (failedPayment?.reservation?.tickets) {
@@ -71,7 +71,8 @@ const statusController = async (req, res) => {
 
 
 const redirectController = async (req, res) => {
-	res.json({ reqbody: req.body, reqquery: req.query, reqparams: req.params });
+
+	res.redirect("http://localhost:5173");
 }
 
 const userPaymentsController = async (req, res) => {
