@@ -65,8 +65,7 @@ ticketing-system/
 ├── middlewares/        # Auth & error middleware
 ├── utils/              # JWT helpers, error classes, points calc
 ├── config/             # Paymob & Google OAuth setup
-├── init.js             # Database seeder
-├── app.js              # Express app entry
+├── populateData.js     # Database seeder
 └── server.js           # Server startup script
 ```
 
@@ -145,7 +144,7 @@ ticketing-system/
 
 | Endpoint             | Method | Description               |
 |----------------------|--------|---------------------------|
-| `/loyalty/:userId`   | GET    | Retrieve user points      |
+| `/loyalty`   | GET    | Retrieve user points      |
 
 ---
 
